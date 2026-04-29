@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>VulnPilot AI</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, Arial, sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+    }
+
+    .app {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 28px;
+    }
+
+    .center-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .auth-card {
+      width: 400px;
+      background: #111827;
+      padding: 28px;
+      border-radius: 16px;
+      border: 1px solid #1f2937;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 22px;
+    }
+
+    .card {
+      background: #111827;
+      padding: 20px;
+      border-radius: 14px;
+      border: 1px solid #1f2937;
+      margin-bottom: 16px;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      margin-bottom: 12px;
+      padding: 10px;
+      background: #020617;
+      border: 1px solid #334155;
+      color: white;
+      border-radius: 8px;
+    }
+
+    button {
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      color: white;
+    }
+
+    .primary { background: #2563eb; }
+    .secondary { background: #334155; }
+    .success { background: #059669; }
+    .danger { background: #dc2626; }
+
+    .buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .output {
+      background: #020617;
+      padding: 16px;
+      border-radius: 10px;
+      min-height: 400px;
+      white-space: pre-wrap;
+    }
+
+    .report-item {
+      padding: 8px;
+      border: 1px solid #334155;
+      margin-bottom: 6px;
+      cursor: pointer;
+    }
+
+    .report-item:hover {
+      background: #1e293b;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="authSection" class="center-screen">
+  <div class="auth-card">
+    <h2>Login</h2>
+
+    <input id="username" placeholder="Username">
+    <input id="password" type="password" placeholder="Password">
+
+    <div class="buttons">
+      <button class="secondary" onclick="registerUser()">Register</button>
+      <button class="primary" onclick="loginUser()">Login</button>
+    </div>
+
+    <p id="authStatus"></p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appSection" class="app" style="display:none;">
+
+  <div class="grid">
+
+    <!-- LEFT -->
+    <div>
+
+      <!-- PROJECTS -->
+      <div class="card">
+        <h3>Projects</h3>
+
+        <input id="project_name" placeholder="Project name">
+        <input id="project_url" placeholder="Target URL">
+        <input id="project_app_type" placeholder="App Type">
+        <input id="project_auth_type" placeholder="Auth Type">
+        <textarea id="project_description" placeholder="Description"></textarea>
+
+        <div class="buttons">
+          <button class="primary" onclick="createProject()">Create</button>
+          <button class="secondary" onclick="loadProjects()">Load</button>
+        </div>
+
+        <p id="projectStatus"></p>
+        <div id="projectList"></div>
+      </div>
+
+      <!-- FINDING -->
+      <div class="card">
+        <h3>Finding</h3>
+
+        <input id="vulnerability_type" placeholder="Type">
+        <input id="affected_endpoint" placeholder="Endpoint">
+
+        <select id="severity">
+          <option>Low</option>
+          <option>Medium</option>
+          <option>High</option>
+        </select>
+
+        <textarea id="test_performed" placeholder="Test"></textarea>
+        <textarea id="observed_result" placeholder="Result"></textarea>
+        <textarea id="impact" placeholder="Impact"></textarea>
+
+        <div class="buttons">
+          <button class="primary" onclick="generateReport()">Generate</button>
+          <button class="success" onclick="suggestAttacks()">Suggest</button>
+          <button onclick="generateFinalReport()">Final Report</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT -->
+    <div class="card">
+      <h3>Output</h3>
+
+      <div class="output" id="output"></div>
+
+      <div class="buttons">
+        <button class="secondary" onclick="copyReport()">Copy</button>
+        <button class="secondary" onclick="downloadTXT()">TXT</button>
+        <button class="secondary" onclick="downloadPDF()">PDF</button>
+      </div>
+
+      <div id="reportsPanel"></div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+let authToken = localStorage.getItem("token");
+let currentProject = null;
+
+function showApp(){
+  document.getElementById("authSection").style.display="none";
+  document.getElementById("appSection").style.display="block";
+}
+
+function showAuth(){
+  document.getElementById("authSection").style.display="flex";
+  document.getElementById("appSection").style.display="none";
+}
+
+function getHeaders(){
+  return {
+    "Content-Type":"application/json",
+    "Authorization":"Bearer "+authToken
+  }
+}
+
+async function registerUser(){
+  const res = await fetch("http://127.0.0.1:8000/register",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      username:username.value,
+      password:password.value
+    })
+  });
+
+  const data = await res.json();
+  authStatus.textContent = data.message || data.detail;
+}
+
+async function loginUser(){
+  const res = await fetch("http://127.0.0.1:8000/login",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      username:username.value,
+      password:password.value
+    })
+  });
+
+  const data = await res.json();
+
+  if(res.ok){
+    authToken = data.access_token;
+    localStorage.setItem("token",authToken);
+    showApp();
+  }else{
+    authStatus.textContent = data.detail;
+  }
+}
+
+async function createProject(){
+  const res = await fetch("http://127.0.0.1:8000/projects",{
+    method:"POST",
+    headers:getHeaders(),
+    body:JSON.stringify({
+      name:project_name.value,
+      target_url:project_url.value,
+      app_type:project_app_type.value,
+      auth_type:project_auth_type.value,
+      description:project_description.value
+    })
+  });
+
+  projectStatus.textContent="Created";
+  loadProjects();
+}
+
+async function loadProjects(){
+  const res = await fetch("http://127.0.0.1:8000/projects",{headers:getHeaders()});
+  const data = await res.json();
+
+  projectList.innerHTML="";
+
+  data.projects.forEach(p=>{
+    const div=document.createElement("div");
+    div.className="report-item";
+    div.textContent=p.name;
+    div.onclick=()=>{currentProject=p};
+    projectList.appendChild(div);
+  });
+}
+
+async function generateReport(){
+  if(!currentProject){
+    output.textContent="Select project first";
+    return;
+  }
+
+  const res = await fetch("http://127.0.0.1:8000/generate-report",{
+    method:"POST",
+    headers:getHeaders(),
+    body:JSON.stringify({
+      vulnerability_type:vulnerability_type.value,
+      affected_endpoint:affected_endpoint.value,
+      severity:severity.value,
+      report_style:"Technical",
+      output_format:"Markdown",
+      test_performed:test_performed.value,
+      observed_result:observed_result.value,
+      impact:impact.value
+    })
+  });
+
+  const data = await res.json();
+  output.textContent=data.report;
+}
+
+async function suggestAttacks(){
+  const res = await fetch("http://127.0.0.1:8000/suggest-attacks",{
+    method:"POST",
+    headers:getHeaders(),
+    body:JSON.stringify({
+      vulnerability_type:vulnerability_type.value,
+      affected_endpoint:affected_endpoint.value,
+      severity:"High",
+      report_style:"Technical",
+      output_format:"Markdown",
+      test_performed:test_performed.value,
+      observed_result:observed_result.value,
+      impact:impact.value
+    })
+  });
+
+  const data = await res.json();
+  output.textContent=data.suggestions;
+}
+
+function copyReport(){
+  navigator.clipboard.writeText(output.textContent);
+}
+
+function downloadTXT(){
+  const blob=new Blob([output.textContent]);
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="report.txt";
+  a.click();
+}
+
+function downloadPDF(){
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF();
+  doc.text(output.textContent,10,10);
+  doc.save("report.pdf");
+}
+
+if(authToken){
+  showApp();
+}else{
+  showAuth();
+}
+async function generateFinalReport(){
+  if(!currentProject){
+    output.textContent = "Select project first";
+    return;
+  }
+
+  const res = await fetch(
+    `http://127.0.0.1:8000/projects/${currentProject.id}/final-report`,
+    { headers: getHeaders() }
+  );
+
+  const data = await res.json();
+  output.textContent = data.final_report;
+}
+</script>
+
+</body>
+</html>
