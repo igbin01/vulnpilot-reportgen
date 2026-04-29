@@ -211,7 +211,7 @@ function getHeaders(){
 }
 
 async function registerUser(){
-  const res = await fetch("http://127.0.0.1:8000/register",{
+  const res = await fetch("https://vulnpilot-reportgen.onrender.com/register",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
@@ -225,7 +225,7 @@ async function registerUser(){
 }
 
 async function loginUser(){
-  const res = await fetch("http://127.0.0.1:8000/login",{
+  const res = await fetch("https://vulnpilot-reportgen.onrender.com/login",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
@@ -246,7 +246,7 @@ async function loginUser(){
 }
 
 async function createProject(){
-  const res = await fetch("http://127.0.0.1:8000/projects",{
+  const res = await fetch("https://vulnpilot-reportgen.onrender.com/projects",{
     method:"POST",
     headers:getHeaders(),
     body:JSON.stringify({
@@ -263,7 +263,7 @@ async function createProject(){
 }
 
 async function loadProjects(){
-  const res = await fetch("http://127.0.0.1:8000/projects",{headers:getHeaders()});
+  const res = await fetch("https://vulnpilot-reportgen.onrender.com/projects",{headers:getHeaders()});
   const data = await res.json();
 
   projectList.innerHTML="";
@@ -283,7 +283,7 @@ async function generateReport(){
     return;
   }
 
-  const res = await fetch("http://127.0.0.1:8000/generate-report",{
+  const res = await fetch("https://vulnpilot-reportgen.onrender.com/generate-report",{
     method:"POST",
     headers:getHeaders(),
     body:JSON.stringify({
@@ -303,7 +303,7 @@ async function generateReport(){
 }
 
 async function suggestAttacks(){
-  const res = await fetch("http://127.0.0.1:8000/suggest-attacks",{
+  const res = await fetch("https://vulnpilot-reportgen.onrender.com/suggest-attacks",{
     method:"POST",
     headers:getHeaders(),
     body:JSON.stringify({
@@ -353,7 +353,7 @@ async function generateFinalReport(){
   }
 
   const res = await fetch(
-    `http://127.0.0.1:8000/projects/${currentProject.id}/final-report`,
+    `https://vulnpilot-reportgen.onrender.com/projects/${currentProject.id}/final-report`,
     { headers: getHeaders() }
   );
 
