@@ -1,366 +1,2264 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>VulnPilot AI</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VulnPilot ReportGen</title>
 
   <style>
-    * { box-sizing: border-box; }
+    :root {
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --surface-2: #eef3f2;
+      --ink: #17202a;
+      --muted: #647079;
+      --line: #d8e1e5;
+      --nav: #15171c;
+      --nav-2: #242831;
+      --accent: #0f766e;
+      --accent-2: #0b5f59;
+      --accent-soft: #d9f0ec;
+      --danger: #b42318;
+      --danger-soft: #fde2df;
+      --warn: #a15c00;
+      --warn-soft: #fff1cf;
+      --shadow: 0 16px 40px rgba(23, 32, 42, 0.12);
+      --radius: 8px;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
-      font-family: Inter, Arial, sans-serif;
-      background: #0f172a;
-      color: #e5e7eb;
-    }
-
-    .app {
-      max-width: 1300px;
-      margin: 0 auto;
-      padding: 28px;
-    }
-
-    .center-screen {
+      min-width: 320px;
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 15px;
+      letter-spacing: 0;
     }
 
-    .auth-card {
-      width: 400px;
-      background: #111827;
-      padding: 28px;
-      border-radius: 16px;
-      border: 1px solid #1f2937;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: 360px 1fr;
-      gap: 22px;
-    }
-
-    .card {
-      background: #111827;
-      padding: 20px;
-      border-radius: 14px;
-      border: 1px solid #1f2937;
-      margin-bottom: 16px;
-    }
-
-    input, textarea, select {
-      width: 100%;
-      margin-bottom: 12px;
-      padding: 10px;
-      background: #020617;
-      border: 1px solid #334155;
-      color: white;
-      border-radius: 8px;
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
     }
 
     button {
-      padding: 10px;
-      border: none;
-      border-radius: 8px;
+      min-height: 38px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: #ffffff;
+      background: var(--nav-2);
       cursor: pointer;
-      color: white;
+      transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
     }
 
-    .primary { background: #2563eb; }
-    .secondary { background: #334155; }
-    .success { background: #059669; }
-    .danger { background: #dc2626; }
+    button:hover {
+      background: #303642;
+    }
 
-    .buttons {
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: 3px solid rgba(15, 118, 110, 0.22);
+      outline-offset: 1px;
+    }
+
+    button:disabled,
+    input:disabled,
+    select:disabled,
+    textarea:disabled {
+      cursor: not-allowed;
+      opacity: 0.58;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #ffffff;
+      color: var(--ink);
+      padding: 10px 11px;
+    }
+
+    textarea {
+      min-height: 96px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .auth-shell {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        linear-gradient(135deg, rgba(15, 118, 110, 0.12), transparent 38%),
+        linear-gradient(315deg, rgba(180, 35, 24, 0.08), transparent 32%),
+        var(--bg);
+    }
+
+    .auth-panel {
+      width: min(440px, 100%);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 28px;
+    }
+
+    .brand-row {
       display: flex;
+      align-items: center;
+      gap: 13px;
+      margin-bottom: 24px;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      background: var(--nav);
+      color: #ffffff;
+      font-weight: 800;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 24px;
+      line-height: 1.15;
+    }
+
+    h2 {
+      font-size: 17px;
+      line-height: 1.2;
+    }
+
+    h3 {
+      font-size: 14px;
+      line-height: 1.3;
+    }
+
+    .subtle {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .auth-form,
+    .form-grid,
+    .stack {
+      display: grid;
+      gap: 14px;
+    }
+
+    .auth-actions,
+    .button-row,
+    .panel-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .auth-actions button,
+    .button-row button {
+      flex: 1 1 130px;
+    }
+
+    .link-button {
+      min-height: 0;
+      width: max-content;
+      padding: 0;
+      color: var(--accent);
+      background: transparent;
+      border: 0;
+      font-weight: 700;
+    }
+
+    .link-button:hover {
+      color: var(--accent-2);
+      background: transparent;
+    }
+
+    .reset-card {
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    .primary {
+      background: var(--accent);
+    }
+
+    .primary:hover {
+      background: var(--accent-2);
+    }
+
+    .secondary {
+      background: #ffffff;
+      color: var(--ink);
+      border-color: var(--line);
+    }
+
+    .secondary:hover {
+      background: var(--surface-2);
+    }
+
+    .danger {
+      background: var(--danger);
+    }
+
+    .danger:hover {
+      background: #901b13;
+    }
+
+    .ghost {
+      min-height: 32px;
+      padding: 6px 10px;
+      color: #dfe8e7;
+      background: transparent;
+      border-color: rgba(255, 255, 255, 0.16);
+    }
+
+    .ghost:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: grid;
+      grid-template-columns: minmax(190px, 0.8fr) minmax(360px, 1.2fr) minmax(220px, auto) auto;
+      gap: 18px;
+      align-items: center;
+      min-height: 64px;
+      padding: 11px 18px;
+      background: var(--nav);
+      color: #ffffff;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .topbar .brand-row {
+      margin: 0;
+      min-width: 0;
+    }
+
+    .topbar .brand-mark {
+      width: 38px;
+      height: 38px;
+      background: var(--accent);
+    }
+
+    .topbar .subtle {
+      color: #aeb8bd;
+    }
+
+    .workspace-nav {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .nav-tab {
+      min-height: 36px;
+      border-color: rgba(255, 255, 255, 0.14);
+      background: transparent;
+      color: #dfe8e7;
+      font-weight: 700;
+    }
+
+    .nav-tab:hover,
+    .nav-tab.active {
+      border-color: rgba(255, 255, 255, 0.28);
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+    }
+
+    .current-project {
+      min-width: 0;
+      color: #dfe8e7;
+      font-size: 13px;
+      text-align: right;
+    }
+
+    .current-project strong {
+      display: block;
+      overflow: hidden;
+      color: #ffffff;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .workspace {
+      width: min(1440px, 100%);
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .workspace-page {
+      display: none;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .workspace-page.active {
+      display: grid;
+    }
+
+    .projects-page {
+      grid-template-columns: minmax(320px, 480px) minmax(360px, 1fr);
+    }
+
+    .scans-page {
+      grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
+    }
+
+    .findings-page {
+      grid-template-columns: minmax(420px, 1fr) minmax(340px, 430px);
+    }
+
+    .panel {
+      min-width: 0;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 1px 2px rgba(23, 32, 42, 0.04);
+    }
+
+    .panel-header {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 52px;
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-body {
+      padding: 14px;
+    }
+
+    .sidebar,
+    .right-rail {
+      display: grid;
+      gap: 16px;
+      min-width: 0;
+    }
+
+    .project-detail-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .detail-row {
+      display: grid;
+      grid-template-columns: minmax(120px, 0.28fr) minmax(0, 1fr);
+      gap: 12px;
+      align-items: start;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .detail-row:last-child {
+      border-bottom: 0;
+    }
+
+    .detail-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+      text-transform: uppercase;
+    }
+
+    .detail-value {
+      min-width: 0;
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 8px;
     }
 
+    .split {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 32px;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: none;
+    }
+
+    .checkbox-row input {
+      width: 16px;
+      height: 16px;
+      padding: 0;
+    }
+
+    .scan-option-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .scan-meter {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #f8fbfa;
+      padding: 9px 10px;
+    }
+
+    .scan-phase {
+      min-width: 0;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 750;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .scan-elapsed {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    .project-list,
+    .finding-list,
+    .scan-list {
+      display: grid;
+      gap: 8px;
+      max-height: 360px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .list-item {
+      width: 100%;
+      display: grid;
+      gap: 5px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #ffffff;
+      color: var(--ink);
+      text-align: left;
+    }
+
+    .list-item:hover {
+      border-color: #a6bfba;
+      background: #f8fbfa;
+    }
+
+    .list-item.active {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .item-title {
+      overflow: hidden;
+      color: var(--ink);
+      font-weight: 750;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .item-meta {
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 12px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 22px;
+      max-width: 100%;
+      border-radius: 999px;
+      padding: 2px 8px;
+      background: var(--surface-2);
+      color: #405057;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .badge.high,
+    .badge.critical {
+      background: var(--danger-soft);
+      color: var(--danger);
+    }
+
+    .badge.medium {
+      background: var(--warn-soft);
+      color: var(--warn);
+    }
+
+    .badge.low {
+      background: var(--accent-soft);
+      color: var(--accent-2);
+    }
+
+    .status-line {
+      min-height: 20px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .status-line.error {
+      color: var(--danger);
+    }
+
+    .empty-state {
+      display: grid;
+      place-items: center;
+      min-height: 96px;
+      border: 1px dashed var(--line);
+      border-radius: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      padding: 14px;
+    }
+
+    .output-panel {
+      min-height: 460px;
+    }
+
+    .output-slot {
+      min-width: 0;
+    }
+
+    .scan-list {
+      max-height: 260px;
+    }
+
     .output {
-      background: #020617;
+      min-height: 360px;
+      max-height: calc(100vh - 262px);
+      overflow: auto;
+      margin: 0;
+      border-radius: 6px;
+      background: #101318;
+      color: #e6ecef;
       padding: 16px;
-      border-radius: 10px;
-      min-height: 400px;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.55;
       white-space: pre-wrap;
+      word-break: break-word;
     }
 
-    .report-item {
-      padding: 8px;
-      border: 1px solid #334155;
-      margin-bottom: 6px;
-      cursor: pointer;
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 30;
+      width: min(420px, calc(100vw - 36px));
+      border: 1px solid rgba(15, 118, 110, 0.28);
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: var(--shadow);
+      color: var(--ink);
+      padding: 12px 14px;
+      font-size: 14px;
     }
 
-    .report-item:hover {
-      background: #1e293b;
+    .toast.error {
+      border-color: rgba(180, 35, 24, 0.28);
+    }
+
+    @media (max-width: 1180px) {
+      .projects-page,
+      .scans-page,
+      .findings-page {
+        grid-template-columns: 1fr;
+      }
+
+      .output {
+        max-height: 520px;
+      }
+    }
+
+    @media (max-width: 820px) {
+      .topbar {
+        position: static;
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .workspace-nav {
+        width: 100%;
+      }
+
+      .nav-tab {
+        flex: 1 1 120px;
+      }
+
+      .current-project {
+        text-align: left;
+      }
+
+      .workspace {
+        padding: 10px;
+      }
+
+      .workspace-page,
+      .right-rail,
+      .quick-actions {
+        grid-template-columns: 1fr;
+      }
+
+      .detail-row {
+        grid-template-columns: 1fr;
+        gap: 4px;
+      }
+
+      .split {
+        grid-template-columns: 1fr;
+      }
+
+      .scan-option-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .panel-header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .panel-actions {
+        width: 100%;
+      }
+
+      .panel-actions button {
+        flex: 1 1 auto;
+      }
     }
   </style>
 </head>
 
 <body>
-
-<!-- LOGIN -->
-<div id="authSection" class="center-screen">
-  <div class="auth-card">
-    <h2>Login</h2>
-
-    <input id="username" placeholder="Username">
-    <input id="password" type="password" placeholder="Password">
-
-    <div class="buttons">
-      <button class="secondary" onclick="registerUser()">Register</button>
-      <button class="primary" onclick="loginUser()">Login</button>
-    </div>
-
-    <p id="authStatus"></p>
-  </div>
-</div>
-
-<!-- APP -->
-<div id="appSection" class="app" style="display:none;">
-
-  <div class="grid">
-
-    <!-- LEFT -->
-    <div>
-
-      <!-- PROJECTS -->
-      <div class="card">
-        <h3>Projects</h3>
-
-        <input id="project_name" placeholder="Project name">
-        <input id="project_url" placeholder="Target URL">
-        <input id="project_app_type" placeholder="App Type">
-        <input id="project_auth_type" placeholder="Auth Type">
-        <textarea id="project_description" placeholder="Description"></textarea>
-
-        <div class="buttons">
-          <button class="primary" onclick="createProject()">Create</button>
-          <button class="secondary" onclick="loadProjects()">Load</button>
-        </div>
-
-        <p id="projectStatus"></p>
-        <div id="projectList"></div>
-      </div>
-
-      <!-- FINDING -->
-      <div class="card">
-        <h3>Finding</h3>
-
-        <input id="vulnerability_type" placeholder="Type">
-        <input id="affected_endpoint" placeholder="Endpoint">
-
-        <select id="severity">
-          <option>Low</option>
-          <option>Medium</option>
-          <option>High</option>
-        </select>
-
-        <textarea id="test_performed" placeholder="Test"></textarea>
-        <textarea id="observed_result" placeholder="Result"></textarea>
-        <textarea id="impact" placeholder="Impact"></textarea>
-
-        <div class="buttons">
-          <button class="primary" onclick="generateReport()">Generate</button>
-          <button class="success" onclick="suggestAttacks()">Suggest</button>
-          <button onclick="generateFinalReport()">Final Report</button>
+  <main id="authView" class="auth-shell">
+    <section class="auth-panel" aria-labelledby="authTitle">
+      <div class="brand-row">
+        <div class="brand-mark">VP</div>
+        <div>
+          <h1 id="authTitle">VulnPilot</h1>
+          <p class="subtle">ReportGen</p>
         </div>
       </div>
 
-    </div>
+      <form id="authForm" class="auth-form">
+        <label>
+          Username
+          <input id="username" autocomplete="username" required>
+        </label>
+        <label>
+          Password
+          <input id="password" type="password" autocomplete="current-password" required minlength="6">
+        </label>
+        <div class="auth-actions">
+          <button id="loginBtn" class="primary" type="submit">Login</button>
+          <button id="registerBtn" class="secondary" type="button">Register</button>
+        </div>
+        <button id="forgotPasswordBtn" class="link-button" type="button">Forgot password?</button>
+        <p id="authStatus" class="status-line" role="status"></p>
+      </form>
 
-    <!-- RIGHT -->
-    <div class="card">
-      <h3>Output</h3>
+      <form id="resetForm" class="auth-form reset-card hidden">
+        <label>
+          Username
+          <input id="resetUsername" autocomplete="username" required>
+        </label>
+        <button id="requestResetBtn" class="secondary" type="button">Get Reset Token</button>
+        <label>
+          Reset Token
+          <input id="resetToken" autocomplete="one-time-code" required>
+        </label>
+        <label>
+          New Password
+          <input id="resetPassword" type="password" autocomplete="new-password" required minlength="6">
+        </label>
+        <div class="auth-actions">
+          <button id="resetPasswordBtn" class="primary" type="submit">Reset Password</button>
+          <button id="backToLoginBtn" class="secondary" type="button">Back to Login</button>
+        </div>
+        <p id="resetStatus" class="status-line" role="status"></p>
+      </form>
+    </section>
+  </main>
 
-      <div class="output" id="output"></div>
-
-      <div class="buttons">
-        <button class="secondary" onclick="copyReport()">Copy</button>
-        <button class="secondary" onclick="downloadTXT()">TXT</button>
-        <button class="secondary" onclick="downloadPDF()">PDF</button>
+  <div id="appView" class="app-shell hidden">
+    <header class="topbar">
+      <div class="brand-row">
+        <div class="brand-mark">VP</div>
+        <div>
+          <h1>VulnPilot</h1>
+          <p class="subtle">ReportGen</p>
+        </div>
       </div>
 
-      <div id="reportsPanel"></div>
-    </div>
+      <nav class="workspace-nav" aria-label="Workspace">
+        <button class="nav-tab active" type="button" data-view="projects">Projects</button>
+        <button class="nav-tab" type="button" data-view="scans">Scans</button>
+        <button class="nav-tab" type="button" data-view="findings">Findings & Reports</button>
+      </nav>
 
+      <div class="current-project">
+        <span>Current project</span>
+        <strong id="currentProjectName">None selected</strong>
+      </div>
+
+      <div class="panel-actions">
+        <button id="refreshAllBtn" class="ghost" type="button">Refresh</button>
+        <button id="logoutBtn" class="ghost" type="button">Logout</button>
+      </div>
+    </header>
+
+    <main id="workspace" class="workspace">
+      <section id="projectsPage" class="workspace-page projects-page active" data-page="projects">
+        <section class="panel" aria-labelledby="projectsTitle">
+          <div class="panel-header">
+            <div>
+              <h2 id="projectsTitle">Projects</h2>
+              <p id="projectCount" class="subtle">0 saved</p>
+            </div>
+            <div class="panel-actions">
+              <button id="reloadProjectsBtn" class="secondary" type="button">Reload</button>
+            </div>
+          </div>
+
+          <div class="panel-body stack">
+            <form id="projectForm" class="form-grid">
+              <label>
+                Name
+                <input id="projectNameInput" placeholder="Acme web assessment" required>
+              </label>
+              <label>
+                Target URL
+                <input id="projectUrlInput" type="url" placeholder="https://app.example.com" required>
+              </label>
+              <div class="split">
+                <label>
+                  App Type
+                  <select id="projectAppTypeInput">
+                    <option value="web">Web</option>
+                    <option value="api">API</option>
+                    <option value="mobile">Mobile</option>
+                    <option value="cloud">Cloud</option>
+                    <option value="other">Other</option>
+                  </select>
+                </label>
+                <label>
+                  Auth Type
+                  <select id="projectAuthTypeInput">
+                    <option value="none">None</option>
+                    <option value="session">Session</option>
+                    <option value="jwt">JWT</option>
+                    <option value="oauth">OAuth</option>
+                    <option value="sso">SSO</option>
+                    <option value="other">Other</option>
+                  </select>
+                </label>
+              </div>
+              <label>
+                Description
+                <textarea id="projectDescriptionInput" placeholder="Scope notes, tenant, or environment"></textarea>
+              </label>
+              <button id="createProjectBtn" class="primary" type="submit">Create Project</button>
+            </form>
+
+            <p id="projectStatus" class="status-line" role="status"></p>
+            <div id="projectList" class="project-list"></div>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="projectDetailsTitle">
+          <div class="panel-header">
+            <div>
+              <h2 id="projectDetailsTitle">Project Details</h2>
+              <p id="projectDetailStatus" class="subtle">Select a project</p>
+            </div>
+            <div class="panel-actions">
+              <button id="deleteProjectBtn" class="danger" type="button">Delete</button>
+            </div>
+          </div>
+
+          <div class="panel-body stack">
+            <div id="projectDetailEmpty" class="empty-state">Select or create a project.</div>
+            <div id="projectDetailContent" class="project-detail-grid hidden">
+              <div class="detail-row">
+                <span class="detail-label">Name</span>
+                <span id="projectDetailName" class="detail-value"></span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Target</span>
+                <span id="projectDetailUrl" class="detail-value"></span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Type</span>
+                <span id="projectDetailType" class="detail-value"></span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Description</span>
+                <span id="projectDetailDescription" class="detail-value"></span>
+              </div>
+            </div>
+
+            <div class="quick-actions">
+              <button id="openScanViewBtn" class="secondary" type="button">Open Scans</button>
+              <button id="openFindingsViewBtn" class="secondary" type="button">Open Findings</button>
+              <button id="refreshProjectDataBtn" class="secondary" type="button">Refresh Data</button>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section id="scansPage" class="workspace-page scans-page" data-page="scans">
+        <section class="panel" aria-labelledby="scannerTitle">
+          <div class="panel-header">
+            <div>
+              <h2 id="scannerTitle">Scanner</h2>
+              <p id="scanCount" class="subtle">0 scans</p>
+            </div>
+            <div class="panel-actions">
+              <button id="reloadScansBtn" class="secondary" type="button">Reload</button>
+            </div>
+          </div>
+
+          <div class="panel-body stack">
+            <form id="scanForm" class="form-grid">
+              <label>
+                Profile
+                <select id="scanProfileInput">
+                  <option value="web-baseline" selected>Fast Baseline</option>
+                  <option value="deep-recon">Deep Recon</option>
+                  <option value="web-plus-ports">Web + Ports</option>
+                </select>
+              </label>
+
+              <div class="split">
+                <label>
+                  Crawl Depth
+                  <select id="scanDepthInput">
+                    <option value="0">0</option>
+                    <option value="1" selected>1</option>
+                    <option value="2">2</option>
+                  </select>
+                </label>
+                <label>
+                  Max Pages
+                  <input id="maxPagesInput" type="number" min="5" max="60" value="25">
+                </label>
+              </div>
+
+              <div class="scan-option-grid">
+                <label class="checkbox-row">
+                  <input id="includePortsInput" type="checkbox">
+                  Ports
+                </label>
+                <label class="checkbox-row">
+                  <input id="includeCommonPathsInput" type="checkbox" checked>
+                  Paths
+                </label>
+                <label class="checkbox-row">
+                  <input id="includeReconInput" type="checkbox" checked>
+                  Recon
+                </label>
+                <label class="checkbox-row">
+                  <input id="allowPrivateTargetsInput" type="checkbox">
+                  Private
+                </label>
+              </div>
+
+              <button id="runScanBtn" class="primary" type="submit">Run Scan</button>
+            </form>
+
+            <div id="scanMeter" class="scan-meter hidden">
+              <span id="scanPhase" class="scan-phase">Ready</span>
+              <span id="scanElapsed" class="scan-elapsed">0.0s</span>
+            </div>
+            <p id="scanStatus" class="status-line" role="status"></p>
+            <div id="scanList" class="scan-list"></div>
+          </div>
+        </section>
+        <div id="scanOutputSlot" class="output-slot"></div>
+      </section>
+
+      <section id="findingsPage" class="workspace-page findings-page" data-page="findings">
+        <section class="panel" aria-labelledby="findingTitle">
+          <div class="panel-header">
+            <div>
+              <h2 id="findingTitle">Finding Workspace</h2>
+              <p id="findingContext" class="subtle">Select or create a project</p>
+            </div>
+            <div class="panel-actions">
+              <button id="clearFindingBtn" class="secondary" type="button">Clear</button>
+            </div>
+          </div>
+
+          <div class="panel-body">
+            <form id="findingForm" class="form-grid">
+            <div class="split">
+              <label>
+                Vulnerability Type
+                <input id="vulnerabilityTypeInput" placeholder="Broken access control" required>
+              </label>
+              <label>
+                Affected Endpoint
+                <input id="affectedEndpointInput" placeholder="/api/users/{id}" required>
+              </label>
+            </div>
+
+            <div class="split">
+              <label>
+                Severity
+                <select id="severityInput">
+                  <option>Low</option>
+                  <option selected>Medium</option>
+                  <option>High</option>
+                  <option>Critical</option>
+                </select>
+              </label>
+              <label>
+                Report Style
+                <select id="reportStyleInput">
+                  <option>Technical</option>
+                  <option>Executive</option>
+                  <option>Balanced</option>
+                </select>
+              </label>
+            </div>
+
+            <label>
+              Test Performed
+              <textarea id="testPerformedInput" placeholder="What you tested and how you validated it" required></textarea>
+            </label>
+            <label>
+              Observed Result
+              <textarea id="observedResultInput" placeholder="What the application returned or allowed" required></textarea>
+            </label>
+            <label>
+              Impact
+              <textarea id="impactInput" placeholder="Business or technical risk from the finding" required></textarea>
+            </label>
+
+            <label>
+              Output Format
+              <select id="outputFormatInput">
+                <option selected>Markdown</option>
+                <option>Plain Text</option>
+              </select>
+            </label>
+
+            <div class="button-row">
+              <button id="saveFindingBtn" class="secondary" type="button">Save Finding</button>
+              <button id="generateReportBtn" class="primary" type="submit">Generate Report</button>
+              <button id="suggestTestsBtn" type="button">Suggest Tests</button>
+            </div>
+            <p id="findingStatus" class="status-line" role="status"></p>
+          </form>
+        </div>
+      </section>
+
+      <aside class="right-rail">
+        <section class="panel" aria-labelledby="findingsTitle">
+          <div class="panel-header">
+            <div>
+              <h2 id="findingsTitle">Saved Findings</h2>
+              <p id="findingCount" class="subtle">0 saved</p>
+            </div>
+            <div class="panel-actions">
+              <button id="reloadFindingsBtn" class="secondary" type="button">Reload</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div id="findingList" class="finding-list"></div>
+          </div>
+        </section>
+
+        <div id="findingOutputSlot" class="output-slot">
+          <section id="outputPanel" class="panel output-panel" aria-labelledby="outputTitle">
+            <div class="panel-header">
+              <div>
+                <h2 id="outputTitle">Output</h2>
+                <p id="outputStatus" class="subtle">Idle</p>
+              </div>
+              <div class="panel-actions">
+                <button id="copyOutputBtn" class="secondary" type="button">Copy</button>
+                <button id="downloadOutputBtn" class="secondary" type="button">TXT</button>
+                <button id="exploitabilityReviewBtn" class="secondary" type="button">Exploitability</button>
+                <button id="privilegeReviewBtn" class="secondary" type="button">Privilege Paths</button>
+                <button id="finalReportBtn" class="primary" type="button">Final Report</button>
+              </div>
+            </div>
+            <div class="panel-body">
+              <pre id="output" class="output">No output yet.</pre>
+            </div>
+          </section>
+        </div>
+      </aside>
+      </section>
+    </main>
   </div>
 
-</div>
+  <div id="toast" class="toast hidden" role="status"></div>
 
-<script>
-let authToken = localStorage.getItem("token");
-let currentProject = null;
+  <script>
+    const API = (() => {
+      const localApi = "http://127.0.0.1:8000";
+      const deployedApi = "https://vulnpilot-reportgen.onrender.com";
+      const localHosts = ["localhost", "127.0.0.1"];
 
-function showApp(){
-  document.getElementById("authSection").style.display="none";
-  document.getElementById("appSection").style.display="block";
-}
+      if (window.location.protocol === "file:" || localHosts.includes(window.location.hostname)) {
+        return localApi;
+      }
 
-function showAuth(){
-  document.getElementById("authSection").style.display="flex";
-  document.getElementById("appSection").style.display="none";
-}
+      return deployedApi;
+    })();
 
-function getHeaders(){
-  return {
-    "Content-Type":"application/json",
-    "Authorization":"Bearer "+authToken
-  }
-}
+    const state = {
+      token: localStorage.getItem("token") || "",
+      projects: [],
+      findings: [],
+      scans: [],
+      currentProject: null,
+      currentFindingId: null,
+      currentScanId: null,
+      currentView: "projects",
+      activeScanTimer: null,
+      activeScanStartedAt: 0,
+      activeScanPhase: 0,
+      outputText: ""
+    };
 
-async function registerUser(){
-  const res = await fetch("https://vulnpilot-reportgen.onrender.com/register",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      username:username.value,
-      password:password.value
-    })
-  });
+    const $ = (id) => document.getElementById(id);
 
-  const data = await res.json();
-  authStatus.textContent = data.message || data.detail;
-}
+    const refs = {
+      authView: $("authView"),
+      appView: $("appView"),
+      authForm: $("authForm"),
+      username: $("username"),
+      password: $("password"),
+      loginBtn: $("loginBtn"),
+      registerBtn: $("registerBtn"),
+      forgotPasswordBtn: $("forgotPasswordBtn"),
+      authStatus: $("authStatus"),
+      resetForm: $("resetForm"),
+      resetUsername: $("resetUsername"),
+      requestResetBtn: $("requestResetBtn"),
+      resetToken: $("resetToken"),
+      resetPassword: $("resetPassword"),
+      resetPasswordBtn: $("resetPasswordBtn"),
+      backToLoginBtn: $("backToLoginBtn"),
+      resetStatus: $("resetStatus"),
+      workspace: $("workspace"),
+      navTabs: Array.from(document.querySelectorAll(".nav-tab")),
+      projectsPage: $("projectsPage"),
+      scansPage: $("scansPage"),
+      findingsPage: $("findingsPage"),
+      scanOutputSlot: $("scanOutputSlot"),
+      findingOutputSlot: $("findingOutputSlot"),
+      outputPanel: $("outputPanel"),
+      logoutBtn: $("logoutBtn"),
+      refreshAllBtn: $("refreshAllBtn"),
+      currentProjectName: $("currentProjectName"),
+      projectForm: $("projectForm"),
+      projectNameInput: $("projectNameInput"),
+      projectUrlInput: $("projectUrlInput"),
+      projectAppTypeInput: $("projectAppTypeInput"),
+      projectAuthTypeInput: $("projectAuthTypeInput"),
+      projectDescriptionInput: $("projectDescriptionInput"),
+      createProjectBtn: $("createProjectBtn"),
+      reloadProjectsBtn: $("reloadProjectsBtn"),
+      projectStatus: $("projectStatus"),
+      projectCount: $("projectCount"),
+      projectList: $("projectList"),
+      projectDetailStatus: $("projectDetailStatus"),
+      projectDetailEmpty: $("projectDetailEmpty"),
+      projectDetailContent: $("projectDetailContent"),
+      projectDetailName: $("projectDetailName"),
+      projectDetailUrl: $("projectDetailUrl"),
+      projectDetailType: $("projectDetailType"),
+      projectDetailDescription: $("projectDetailDescription"),
+      deleteProjectBtn: $("deleteProjectBtn"),
+      openScanViewBtn: $("openScanViewBtn"),
+      openFindingsViewBtn: $("openFindingsViewBtn"),
+      refreshProjectDataBtn: $("refreshProjectDataBtn"),
+      scanForm: $("scanForm"),
+      scanProfileInput: $("scanProfileInput"),
+      scanDepthInput: $("scanDepthInput"),
+      maxPagesInput: $("maxPagesInput"),
+      includePortsInput: $("includePortsInput"),
+      includeCommonPathsInput: $("includeCommonPathsInput"),
+      includeReconInput: $("includeReconInput"),
+      allowPrivateTargetsInput: $("allowPrivateTargetsInput"),
+      runScanBtn: $("runScanBtn"),
+      scanMeter: $("scanMeter"),
+      scanPhase: $("scanPhase"),
+      scanElapsed: $("scanElapsed"),
+      reloadScansBtn: $("reloadScansBtn"),
+      scanStatus: $("scanStatus"),
+      scanCount: $("scanCount"),
+      scanList: $("scanList"),
+      findingContext: $("findingContext"),
+      findingForm: $("findingForm"),
+      vulnerabilityTypeInput: $("vulnerabilityTypeInput"),
+      affectedEndpointInput: $("affectedEndpointInput"),
+      severityInput: $("severityInput"),
+      reportStyleInput: $("reportStyleInput"),
+      testPerformedInput: $("testPerformedInput"),
+      observedResultInput: $("observedResultInput"),
+      impactInput: $("impactInput"),
+      outputFormatInput: $("outputFormatInput"),
+      saveFindingBtn: $("saveFindingBtn"),
+      generateReportBtn: $("generateReportBtn"),
+      suggestTestsBtn: $("suggestTestsBtn"),
+      clearFindingBtn: $("clearFindingBtn"),
+      findingStatus: $("findingStatus"),
+      reloadFindingsBtn: $("reloadFindingsBtn"),
+      findingCount: $("findingCount"),
+      findingList: $("findingList"),
+      outputStatus: $("outputStatus"),
+      output: $("output"),
+      copyOutputBtn: $("copyOutputBtn"),
+      downloadOutputBtn: $("downloadOutputBtn"),
+      exploitabilityReviewBtn: $("exploitabilityReviewBtn"),
+      privilegeReviewBtn: $("privilegeReviewBtn"),
+      finalReportBtn: $("finalReportBtn"),
+      toast: $("toast")
+    };
 
-async function loginUser(){
-  const res = await fetch("https://vulnpilot-reportgen.onrender.com/login",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      username:username.value,
-      password:password.value
-    })
-  });
+    function setStatus(element, message, isError = false) {
+      element.textContent = message || "";
+      element.classList.toggle("error", Boolean(isError));
+    }
 
-  const data = await res.json();
+    function showToast(message, isError = false) {
+      refs.toast.textContent = message;
+      refs.toast.classList.toggle("error", Boolean(isError));
+      refs.toast.classList.remove("hidden");
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => {
+        refs.toast.classList.add("hidden");
+      }, 3400);
+    }
 
-  if(res.ok){
-    authToken = data.access_token;
-    localStorage.setItem("token",authToken);
-    showApp();
-  }else{
-    authStatus.textContent = data.detail;
-  }
-}
+    function setOutput(text, status = "Ready") {
+      state.outputText = text || "";
+      refs.output.textContent = state.outputText || "No output yet.";
+      refs.outputStatus.textContent = status;
+    }
 
-async function createProject(){
-  const res = await fetch("https://vulnpilot-reportgen.onrender.com/projects",{
-    method:"POST",
-    headers:getHeaders(),
-    body:JSON.stringify({
-      name:project_name.value,
-      target_url:project_url.value,
-      app_type:project_app_type.value,
-      auth_type:project_auth_type.value,
-      description:project_description.value
-    })
-  });
+    function setView(view) {
+      const nextView = ["projects", "scans", "findings"].includes(view) ? view : "projects";
+      state.currentView = nextView;
 
-  projectStatus.textContent="Created";
-  loadProjects();
-}
+      [
+        refs.projectsPage,
+        refs.scansPage,
+        refs.findingsPage
+      ].forEach((page) => {
+        page.classList.toggle("active", page.dataset.page === nextView);
+      });
 
-async function loadProjects(){
-  const res = await fetch("https://vulnpilot-reportgen.onrender.com/projects",{headers:getHeaders()});
-  const data = await res.json();
+      refs.navTabs.forEach((tab) => {
+        const isActive = tab.dataset.view === nextView;
+        tab.classList.toggle("active", isActive);
+        if (isActive) {
+          tab.setAttribute("aria-current", "page");
+        } else {
+          tab.removeAttribute("aria-current");
+        }
+      });
 
-  projectList.innerHTML="";
+      if (nextView === "scans") {
+        refs.scanOutputSlot.appendChild(refs.outputPanel);
+      } else if (nextView === "findings") {
+        refs.findingOutputSlot.appendChild(refs.outputPanel);
+      }
 
-  data.projects.forEach(p=>{
-    const div=document.createElement("div");
-    div.className="report-item";
-    div.textContent=p.name;
-    div.onclick=()=>{currentProject=p};
-    projectList.appendChild(div);
-  });
-}
+      [
+        refs.exploitabilityReviewBtn,
+        refs.privilegeReviewBtn,
+        refs.finalReportBtn
+      ].forEach((button) => {
+        button.classList.toggle("hidden", nextView === "scans");
+      });
+    }
 
-async function generateReport(){
-  if(!currentProject){
-    output.textContent="Select project first";
-    return;
-  }
+    function showApp() {
+      refs.authView.classList.add("hidden");
+      refs.appView.classList.remove("hidden");
+      setView(state.currentView);
+      updateProjectDependentState();
+    }
 
-  const res = await fetch("https://vulnpilot-reportgen.onrender.com/generate-report",{
-    method:"POST",
-    headers:getHeaders(),
-    body:JSON.stringify({
-      vulnerability_type:vulnerability_type.value,
-      affected_endpoint:affected_endpoint.value,
-      severity:severity.value,
-      report_style:"Technical",
-      output_format:"Markdown",
-      test_performed:test_performed.value,
-      observed_result:observed_result.value,
-      impact:impact.value
-    })
-  });
+    function showLoginForm(message = "") {
+      refs.authForm.classList.remove("hidden");
+      refs.resetForm.classList.add("hidden");
+      setStatus(refs.resetStatus, "");
+      setStatus(refs.authStatus, message);
+      refs.password.value = "";
+      refs.username.focus();
+    }
 
-  const data = await res.json();
-  output.textContent=data.report;
-}
+    function showResetForm() {
+      refs.authForm.classList.add("hidden");
+      refs.resetForm.classList.remove("hidden");
+      refs.resetUsername.value = refs.username.value.trim();
+      refs.resetPassword.value = "";
+      setStatus(refs.authStatus, "");
+      setStatus(refs.resetStatus, "");
+      refs.resetUsername.focus();
+    }
 
-async function suggestAttacks(){
-  const res = await fetch("https://vulnpilot-reportgen.onrender.com/suggest-attacks",{
-    method:"POST",
-    headers:getHeaders(),
-    body:JSON.stringify({
-      vulnerability_type:vulnerability_type.value,
-      affected_endpoint:affected_endpoint.value,
-      severity:"High",
-      report_style:"Technical",
-      output_format:"Markdown",
-      test_performed:test_performed.value,
-      observed_result:observed_result.value,
-      impact:impact.value
-    })
-  });
+    function showAuth() {
+      refs.appView.classList.add("hidden");
+      refs.authView.classList.remove("hidden");
+      showLoginForm();
+    }
 
-  const data = await res.json();
-  output.textContent=data.suggestions;
-}
+    function logout(message = "Signed out") {
+      window.clearInterval(state.activeScanTimer);
+      state.token = "";
+      state.projects = [];
+      state.findings = [];
+      state.scans = [];
+      state.currentProject = null;
+      state.currentFindingId = null;
+      state.currentScanId = null;
+      state.currentView = "projects";
+      localStorage.removeItem("token");
+      renderProjects();
+      renderProjectDetails();
+      renderFindings();
+      renderScans();
+      showAuth();
+      setStatus(refs.authStatus, message);
+    }
 
-function copyReport(){
-  navigator.clipboard.writeText(output.textContent);
-}
+    async function request(path, options = {}) {
+      const headers = { ...(options.headers || {}) };
 
-function downloadTXT(){
-  const blob=new Blob([output.textContent]);
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download="report.txt";
-  a.click();
-}
+      if (options.body && typeof options.body !== "string") {
+        headers["Content-Type"] = "application/json";
+        options = { ...options, body: JSON.stringify(options.body) };
+      }
 
-function downloadPDF(){
-  const {jsPDF}=window.jspdf;
-  const doc=new jsPDF();
-  doc.text(output.textContent,10,10);
-  doc.save("report.pdf");
-}
+      if (state.token) {
+        headers.Authorization = `Bearer ${state.token}`;
+      }
 
-if(authToken){
-  showApp();
-}else{
-  showAuth();
-}
-async function generateFinalReport(){
-  if(!currentProject){
-    output.textContent = "Select project first";
-    return;
-  }
+      const response = await fetch(`${API}${path}`, { ...options, headers });
+      let payload = null;
 
-  const res = await fetch(
-    `https://vulnpilot-reportgen.onrender.com/projects/${currentProject.id}/final-report`,
-    { headers: getHeaders() }
-  );
+      try {
+        payload = await response.json();
+      } catch {
+        payload = null;
+      }
 
-  const data = await res.json();
-  output.textContent = data.final_report;
-}
-</script>
+      if (!response.ok) {
+        const message = payload?.detail || payload?.message || `Request failed with ${response.status}`;
+        if (response.status === 401) {
+          logout("Your session expired. Please login again.");
+        }
+        throw new Error(message);
+      }
 
+      return payload;
+    }
+
+    async function withBusy(button, busyText, task) {
+      const originalText = button.textContent;
+      button.disabled = true;
+      button.textContent = busyText;
+      try {
+        return await task();
+      } finally {
+        button.disabled = false;
+        button.textContent = originalText;
+      }
+    }
+
+    async function register() {
+      setStatus(refs.authStatus, "");
+      await withBusy(refs.registerBtn, "Registering", async () => {
+        const payload = await request("/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: {
+            username: refs.username.value.trim(),
+            password: refs.password.value
+          }
+        });
+        setStatus(refs.authStatus, payload.message || "User registered. You can login now.");
+      });
+    }
+
+    async function login() {
+      setStatus(refs.authStatus, "");
+      await withBusy(refs.loginBtn, "Logging in", async () => {
+        const payload = await request("/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: {
+            username: refs.username.value.trim(),
+            password: refs.password.value
+          }
+        });
+
+        state.token = payload.access_token;
+        localStorage.setItem("token", state.token);
+        showApp();
+        await loadProjects({ selectFirst: true });
+        showToast("Logged in");
+      });
+    }
+
+    async function requestPasswordReset() {
+      setStatus(refs.resetStatus, "");
+      await withBusy(refs.requestResetBtn, "Creating Token", async () => {
+        const payload = await request("/forgot-password", {
+          method: "POST",
+          body: {
+            username: refs.resetUsername.value.trim()
+          }
+        });
+
+        if (payload.reset_token) {
+          refs.resetToken.value = payload.reset_token;
+          refs.resetToken.focus();
+          setStatus(refs.resetStatus, `Reset token generated. It expires in ${payload.expires_minutes} minutes.`);
+        } else {
+          setStatus(refs.resetStatus, payload.message || "If that user exists, a reset token was generated.");
+        }
+      });
+    }
+
+    async function resetPassword() {
+      setStatus(refs.resetStatus, "");
+      await withBusy(refs.resetPasswordBtn, "Resetting", async () => {
+        const payload = await request("/reset-password", {
+          method: "POST",
+          body: {
+            token: refs.resetToken.value.trim(),
+            new_password: refs.resetPassword.value
+          }
+        });
+
+        refs.password.value = "";
+        showLoginForm(payload.message || "Password reset. Login with your new password.");
+        showToast("Password reset");
+      });
+    }
+
+    async function loadProjects({ selectFirst = false } = {}) {
+      setStatus(refs.projectStatus, "Loading projects...");
+      const payload = await request("/projects");
+      state.projects = payload.projects || [];
+
+      const currentStillExists = state.projects.find((project) => project.id === state.currentProject?.id);
+      if (currentStillExists) {
+        state.currentProject = currentStillExists;
+      } else if (selectFirst && state.projects.length > 0) {
+        state.currentProject = state.projects[0];
+      } else if (!state.projects.length) {
+        state.currentProject = null;
+      }
+
+      renderProjects();
+      updateProjectDependentState();
+
+      if (state.currentProject) {
+        await loadFindings();
+        await loadScans();
+      } else {
+        state.findings = [];
+        state.scans = [];
+        renderFindings();
+        renderScans();
+      }
+
+      setStatus(refs.projectStatus, state.projects.length ? "" : "No projects yet.");
+    }
+
+    async function createProject() {
+      setStatus(refs.projectStatus, "");
+      await withBusy(refs.createProjectBtn, "Creating", async () => {
+        const payload = await request("/projects", {
+          method: "POST",
+          body: {
+            name: refs.projectNameInput.value.trim(),
+            target_url: refs.projectUrlInput.value.trim(),
+            app_type: refs.projectAppTypeInput.value,
+            auth_type: refs.projectAuthTypeInput.value,
+            description: refs.projectDescriptionInput.value.trim()
+          }
+        });
+
+        refs.projectForm.reset();
+        await loadProjects();
+        const newProject = state.projects.find((project) => project.id === payload.project_id);
+        if (newProject) {
+          await selectProject(newProject);
+        }
+        showToast("Project created");
+      });
+    }
+
+    async function selectProject(project) {
+      state.currentProject = project;
+      state.currentFindingId = null;
+      state.currentScanId = null;
+      state.findings = [];
+      state.scans = [];
+      clearFindingForm();
+      renderProjects();
+      updateProjectDependentState();
+      await loadFindings();
+      await loadScans();
+    }
+
+    function renderProjects() {
+      refs.projectCount.textContent = `${state.projects.length} saved`;
+      refs.projectList.innerHTML = "";
+
+      if (!state.projects.length) {
+        refs.projectList.innerHTML = '<div class="empty-state">No projects yet.</div>';
+        return;
+      }
+
+      state.projects.forEach((project) => {
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = "list-item";
+        item.classList.toggle("active", project.id === state.currentProject?.id);
+        item.innerHTML = `
+          <span class="item-title"></span>
+          <span class="item-meta"></span>
+          <span class="badge-row">
+            <span class="badge"></span>
+            <span class="badge"></span>
+          </span>
+        `;
+        item.querySelector(".item-title").textContent = project.name;
+        item.querySelector(".item-meta").textContent = project.target_url;
+        const badges = item.querySelectorAll(".badge");
+        badges[0].textContent = project.app_type || "app";
+        badges[1].textContent = project.auth_type || "auth";
+        item.addEventListener("click", () => selectProject(project));
+        refs.projectList.appendChild(item);
+      });
+    }
+
+    function renderProjectDetails() {
+      const project = state.currentProject;
+      const hasProject = Boolean(project);
+
+      refs.projectDetailStatus.textContent = hasProject ? project.target_url : "Select a project";
+      refs.projectDetailEmpty.classList.toggle("hidden", hasProject);
+      refs.projectDetailContent.classList.toggle("hidden", !hasProject);
+
+      if (!hasProject) {
+        refs.projectDetailName.textContent = "";
+        refs.projectDetailUrl.textContent = "";
+        refs.projectDetailType.textContent = "";
+        refs.projectDetailDescription.textContent = "";
+        return;
+      }
+
+      refs.projectDetailName.textContent = project.name || "-";
+      refs.projectDetailUrl.textContent = project.target_url || "-";
+      refs.projectDetailType.textContent = `${project.app_type || "-"} / ${project.auth_type || "-"}`;
+      refs.projectDetailDescription.textContent = project.description || "No description";
+    }
+
+    async function deleteCurrentProject() {
+      if (!ensureProject(refs.projectStatus)) return;
+
+      const projectName = state.currentProject.name || "this project";
+      const confirmed = window.confirm(`Delete "${projectName}" and all saved findings, scans, and reports?`);
+      if (!confirmed) return;
+
+      await withBusy(refs.deleteProjectBtn, "Deleting", async () => {
+        await request(`/projects/${state.currentProject.id}`, {
+          method: "DELETE"
+        });
+
+        state.currentProject = null;
+        state.currentFindingId = null;
+        state.currentScanId = null;
+        state.findings = [];
+        state.scans = [];
+        clearFindingForm();
+        setOutput("", "Idle");
+        await loadProjects({ selectFirst: true });
+        setView("projects");
+        showToast("Project deleted");
+      });
+    }
+
+    async function loadScans() {
+      if (!state.currentProject) {
+        state.scans = [];
+        renderScans();
+        return;
+      }
+
+      setStatus(refs.scanStatus, "Loading scans...");
+      const payload = await request(`/projects/${state.currentProject.id}/scans`);
+      state.scans = payload.scans || [];
+      renderScans();
+      setStatus(refs.scanStatus, "");
+    }
+
+    function applyScanProfile() {
+      const profile = refs.scanProfileInput.value;
+
+      if (profile === "deep-recon") {
+        refs.scanDepthInput.value = "3";
+        refs.maxPagesInput.value = "80";
+        refs.includeCommonPathsInput.checked = true;
+        refs.includeReconInput.checked = true;
+      } else if (profile === "web-plus-ports") {
+        refs.scanDepthInput.value = "1";
+        refs.maxPagesInput.value = "35";
+        refs.includePortsInput.checked = true;
+        refs.includeCommonPathsInput.checked = true;
+        refs.includeReconInput.checked = true;
+      } else {
+        refs.scanDepthInput.value = "1";
+        refs.maxPagesInput.value = "25";
+        refs.includePortsInput.checked = false;
+        refs.includeCommonPathsInput.checked = true;
+        refs.includeReconInput.checked = true;
+      }
+    }
+
+    function startScanProgress() {
+      const phases = [
+        "Resolving DNS and checking target guardrails",
+        "Probing HTTP, TLS, robots, and sitemap",
+        "Crawling same-origin pages",
+        "Enumerating curated content paths",
+        "Building recon inventory and observations"
+      ];
+
+      window.clearInterval(state.activeScanTimer);
+      state.activeScanStartedAt = performance.now();
+      state.activeScanPhase = 0;
+      refs.scanMeter.classList.remove("hidden");
+      refs.scanPhase.textContent = phases[0];
+      refs.scanElapsed.textContent = "0.0s";
+
+      state.activeScanTimer = window.setInterval(() => {
+        const elapsed = (performance.now() - state.activeScanStartedAt) / 1000;
+        state.activeScanPhase = Math.min(phases.length - 1, Math.floor(elapsed / 1.4));
+        refs.scanPhase.textContent = phases[state.activeScanPhase];
+        refs.scanElapsed.textContent = `${elapsed.toFixed(1)}s`;
+        setStatus(refs.scanStatus, `${phases[state.activeScanPhase]}...`);
+      }, 120);
+    }
+
+    function stopScanProgress(message = "Scan complete") {
+      window.clearInterval(state.activeScanTimer);
+      state.activeScanTimer = null;
+      const elapsed = state.activeScanStartedAt
+        ? ((performance.now() - state.activeScanStartedAt) / 1000).toFixed(1)
+        : "0.0";
+      refs.scanPhase.textContent = message;
+      refs.scanElapsed.textContent = `${elapsed}s`;
+      setStatus(refs.scanStatus, message);
+    }
+
+    async function runScan() {
+      if (!ensureProject(refs.scanStatus)) return;
+
+      await withBusy(refs.runScanBtn, "Scanning", async () => {
+        setView("scans");
+        startScanProgress();
+        setOutput("Scan running...\n\nThe scanner is collecting DNS, HTTP, TLS, crawl, enumeration, and recon data.", "Working");
+        try {
+          const payload = await request(`/projects/${state.currentProject.id}/scan`, {
+            method: "POST",
+            body: getScanPayload()
+          });
+
+          const scan = payload.scan;
+          state.currentScanId = scan.id;
+          await loadScans();
+          renderScanResult(scan);
+          const elapsed = scan.summary?.elapsed_seconds ? `${scan.summary.elapsed_seconds}s` : refs.scanElapsed.textContent;
+          stopScanProgress(`Scan completed in ${elapsed}`);
+          showToast("Scan completed");
+        } catch (error) {
+          stopScanProgress("Scan failed");
+          throw error;
+        }
+      });
+    }
+
+    async function openScan(scanId) {
+      const payload = await request(`/scans/${scanId}`);
+      state.currentScanId = scanId;
+      renderScans();
+      renderScanResult(payload.scan);
+    }
+
+    function getScanPayload() {
+      const profile = refs.scanProfileInput.value;
+      const includePorts = refs.includePortsInput.checked || profile === "web-plus-ports";
+      const deepRecon = profile === "deep-recon";
+
+      return {
+        profile,
+        scan_depth: Number(refs.scanDepthInput.value),
+        max_pages: Number(refs.maxPagesInput.value || 25),
+        include_ports: includePorts,
+        include_common_paths: refs.includeCommonPathsInput.checked,
+        include_recon: refs.includeReconInput.checked,
+        allow_private: refs.allowPrivateTargetsInput.checked,
+        path_profile: deepRecon ? "deep" : "standard",
+        concurrency: 12,
+        ports: []
+      };
+    }
+
+    function renderScans() {
+      refs.scanCount.textContent = `${state.scans.length} scans`;
+      refs.scanList.innerHTML = "";
+
+      if (!state.currentProject) {
+        refs.scanList.innerHTML = '<div class="empty-state">Select a project.</div>';
+        return;
+      }
+
+      if (!state.scans.length) {
+        refs.scanList.innerHTML = '<div class="empty-state">No scans saved for this project.</div>';
+        return;
+      }
+
+      state.scans.forEach((scan) => {
+        const summary = scan.summary || {};
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = "list-item";
+        item.classList.toggle("active", scan.id === state.currentScanId);
+        item.innerHTML = `
+          <span class="item-title"></span>
+          <span class="item-meta"></span>
+          <span class="badge-row">
+            <span class="badge"></span>
+            <span class="badge"></span>
+            <span class="badge"></span>
+          </span>
+        `;
+        item.querySelector(".item-title").textContent = `${scan.profile} scan`;
+        item.querySelector(".item-meta").textContent = scan.created_at;
+        const badges = item.querySelectorAll(".badge");
+        badges[0].textContent = `${summary.pages_crawled || 0} pages`;
+        badges[1].textContent = `${summary.endpoints_discovered || 0} endpoints`;
+        badges[2].textContent = `${summary.interesting_paths || 0} paths`;
+        item.addEventListener("click", () => runSafely(() => openScan(scan.id), refs.scanStatus));
+        refs.scanList.appendChild(item);
+      });
+    }
+
+    function renderScanResult(scan) {
+      setOutput(formatScanResult(scan), `Scan ${scan.id} ready`);
+      state.currentScanId = scan.id;
+      renderScans();
+    }
+
+    function formatScanResult(scan) {
+      const result = scan.result || {};
+      const summary = scan.summary || result.summary || {};
+      const http = result.http || {};
+      const dns = result.dns || {};
+      const tls = result.tls || {};
+      const crawl = result.crawl || {};
+      const observations = result.observations || [];
+      const headers = result.security_headers || {};
+      const commonPaths = result.common_paths || [];
+      const ports = result.ports || [];
+      const recon = result.recon || {};
+      const timing = result.timing || {};
+
+      const lines = [
+        "VulnPilot Scan Result",
+        "=====================",
+        "",
+        `Target: ${scan.target_url || result.target_url || "Unknown"}`,
+        `Profile: ${scan.profile || "web-baseline"}`,
+        `Status: ${scan.status || "completed"}`,
+        `Created: ${scan.created_at || result.finished_at || ""}`,
+        `Elapsed: ${valueOrDash(summary.elapsed_seconds || timing.elapsed_seconds)}s`,
+        "",
+        "Summary",
+        "-------",
+        `HTTP Status: ${valueOrDash(summary.status_code)}`,
+        `Title: ${valueOrDash(summary.title)}`,
+        `IP Addresses: ${summary.ip_count || 0}`,
+        `Pages Crawled: ${summary.pages_crawled || 0}`,
+        `URLs Discovered: ${summary.urls_discovered || 0}`,
+        `Forms Discovered: ${summary.forms_discovered || 0}`,
+        `Assets Discovered: ${summary.assets_discovered || 0}`,
+        `Endpoints Discovered: ${summary.endpoints_discovered || 0}`,
+        `Interesting Paths: ${summary.interesting_paths || 0}`,
+        `Open Ports: ${summary.open_ports || 0}`,
+        `Missing Security Headers: ${summary.missing_security_headers || 0}`,
+        "",
+        "Observations",
+        "------------",
+        observations.length
+          ? observations.map((item) => `[${item.severity}] ${item.title}: ${item.detail}`).join("\n")
+          : "No observations recorded.",
+        "",
+        "HTTP",
+        "----",
+        `Final URL: ${valueOrDash(http.final_url)}`,
+        `Content Type: ${valueOrDash(http.content_type)}`,
+        `Content Length: ${http.content_length || 0}`,
+        `Server: ${valueOrDash(http.headers?.server)}`,
+        `Powered By: ${valueOrDash(http.headers?.["x-powered-by"])}`,
+        "",
+        "Security Headers",
+        "----------------",
+        Object.keys(headers).length
+          ? Object.entries(headers).map(([name, check]) => `${name}: ${check.present ? check.value : "missing"}`).join("\n")
+          : "No header data.",
+        "",
+        "DNS",
+        "---",
+        dns.ip_addresses?.length ? dns.ip_addresses.join("\n") : valueOrDash(dns.error),
+        "",
+        "TLS",
+        "---",
+        tls.error
+          ? tls.error
+          : [
+              `Protocol: ${valueOrDash(tls.protocol)}`,
+              `Cipher: ${valueOrDash(tls.cipher)}`,
+              `Subject: ${valueOrDash(tls.subject?.commonName)}`,
+              `Issuer: ${valueOrDash(tls.issuer?.commonName)}`,
+              `Expires: ${valueOrDash(tls.not_after)}`
+            ].join("\n"),
+        "",
+        "Crawl",
+        "-----",
+        (crawl.pages || []).slice(0, 30).map((page) => {
+          return `${page.status_code || "-"} ${page.url}${page.title ? ` - ${page.title}` : ""}`;
+        }).join("\n") || "No crawl pages.",
+        "",
+        "Forms",
+        "-----",
+        (crawl.forms || []).slice(0, 30).map((form) => `${form.method} ${form.action || form.page_url}`).join("\n") || "No forms discovered.",
+        "",
+        "Recon",
+        "-----",
+        [
+          `Technologies: ${(recon.technologies || []).map((item) => item.value).join(", ") || "None detected"}`,
+          `Cookies: ${(recon.cookies || []).map((item) => `${item.name} secure=${item.secure} httponly=${item.httponly}`).join("; ") || "None observed"}`,
+          `Assets: ${(recon.assets || []).length || 0}`,
+          `Endpoints: ${(recon.endpoints || []).length || 0}`,
+        ].join("\n"),
+        "",
+        "Endpoints",
+        "---------",
+        (recon.endpoints || []).slice(0, 60).map((item) => `${item.value} (${item.source})`).join("\n") || "No client-side endpoints discovered.",
+        "",
+        "Assets",
+        "------",
+        (recon.assets || []).slice(0, 60).join("\n") || "No same-origin assets discovered.",
+        "",
+        "Common Paths",
+        "------------",
+        commonPaths.slice(0, 40).map((item) => {
+          const marker = item.interesting ? "*" : "-";
+          return `${marker} ${item.status_code || "-"} ${item.path} ${item.content_type || ""}`;
+        }).join("\n") || "Common path enumeration was not run.",
+        "",
+        "Ports",
+        "-----",
+        ports.length
+          ? ports.map((item) => `${item.port}: ${item.status}`).join("\n")
+          : "Port scanning was not run.",
+      ];
+
+      return lines.join("\n");
+    }
+
+    function valueOrDash(value) {
+      return value === undefined || value === null || value === "" ? "-" : value;
+    }
+
+    async function loadFindings() {
+      if (!state.currentProject) {
+        state.findings = [];
+        renderFindings();
+        return;
+      }
+
+      setStatus(refs.findingStatus, "Loading findings...");
+      const payload = await request(`/projects/${state.currentProject.id}/findings`);
+      state.findings = payload.findings || [];
+      renderFindings();
+      setStatus(refs.findingStatus, "");
+    }
+
+    async function saveFinding() {
+      if (!ensureProject()) return;
+      if (!refs.findingForm.reportValidity()) return;
+
+      await withBusy(refs.saveFindingBtn, "Saving", async () => {
+        const payload = getFindingPayload(false);
+        const saved = await request(`/projects/${state.currentProject.id}/findings`, {
+          method: "POST",
+          body: payload
+        });
+        await loadFindings();
+        const newFinding = state.findings.find((finding) => finding.id === saved.finding_id);
+        if (newFinding) {
+          fillFindingForm(newFinding);
+        }
+        showToast("Finding saved");
+      });
+    }
+
+    function renderFindings() {
+      refs.findingCount.textContent = `${state.findings.length} saved`;
+      refs.findingList.innerHTML = "";
+
+      if (!state.currentProject) {
+        refs.findingList.innerHTML = '<div class="empty-state">Select a project.</div>';
+        return;
+      }
+
+      if (!state.findings.length) {
+        refs.findingList.innerHTML = '<div class="empty-state">No findings saved for this project.</div>';
+        return;
+      }
+
+      state.findings.forEach((finding) => {
+        const severityClass = String(finding.severity || "").toLowerCase();
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = "list-item";
+        item.classList.toggle("active", finding.id === state.currentFindingId);
+        item.innerHTML = `
+          <span class="item-title"></span>
+          <span class="item-meta"></span>
+          <span class="badge-row">
+            <span class="badge"></span>
+            <span class="badge ${severityClass}"></span>
+          </span>
+        `;
+        item.querySelector(".item-title").textContent = finding.vulnerability_type;
+        item.querySelector(".item-meta").textContent = finding.affected_endpoint;
+        const badges = item.querySelectorAll(".badge");
+        badges[0].textContent = finding.created_at || "saved";
+        badges[1].textContent = finding.severity || "Severity";
+        item.addEventListener("click", () => fillFindingForm(finding));
+        refs.findingList.appendChild(item);
+      });
+    }
+
+    function fillFindingForm(finding) {
+      state.currentFindingId = finding.id;
+      refs.vulnerabilityTypeInput.value = finding.vulnerability_type || "";
+      refs.affectedEndpointInput.value = finding.affected_endpoint || "";
+      refs.severityInput.value = finding.severity || "Medium";
+      refs.testPerformedInput.value = finding.test_performed || "";
+      refs.observedResultInput.value = finding.observed_result || "";
+      refs.impactInput.value = finding.impact || "";
+      renderFindings();
+      setStatus(refs.findingStatus, "Finding loaded.");
+    }
+
+    function clearFindingForm() {
+      state.currentFindingId = null;
+      refs.findingForm.reset();
+      refs.severityInput.value = "Medium";
+      refs.reportStyleInput.value = "Technical";
+      refs.outputFormatInput.value = "Markdown";
+      renderFindings();
+      setStatus(refs.findingStatus, "");
+    }
+
+    async function generateReport() {
+      if (!ensureProject()) return;
+      if (!refs.findingForm.reportValidity()) return;
+
+      await withBusy(refs.generateReportBtn, "Generating", async () => {
+        setOutput("Generating report...", "Working");
+        const payload = await request("/generate-report", {
+          method: "POST",
+          body: getFindingPayload(true)
+        });
+        setOutput(payload.report, `Report ${payload.report_id} generated`);
+        showToast("Report generated");
+      });
+    }
+
+    async function suggestTests() {
+      if (!ensureProject()) return;
+      if (!refs.findingForm.reportValidity()) return;
+
+      await withBusy(refs.suggestTestsBtn, "Reviewing", async () => {
+        setOutput("Generating test suggestions...", "Working");
+        const payload = await request("/suggest-attacks", {
+          method: "POST",
+          body: getFindingPayload(true)
+        });
+        setOutput(payload.suggestions, "Suggestions ready");
+        showToast("Suggestions ready");
+      });
+    }
+
+    async function generateFinalReport() {
+      if (!ensureProject()) return;
+
+      await withBusy(refs.finalReportBtn, "Building", async () => {
+        setOutput("Building final report...", "Working");
+        const payload = await request(`/projects/${state.currentProject.id}/final-report`);
+        setOutput(payload.final_report, "Final report ready");
+        showToast("Final report ready");
+      });
+    }
+
+    async function generateExploitabilityReview() {
+      if (!ensureProject()) return;
+
+      await withBusy(refs.exploitabilityReviewBtn, "Reviewing", async () => {
+        setOutput("Building exploitability review...", "Working");
+        const payload = await request(`/projects/${state.currentProject.id}/exploitability-review`);
+        setOutput(payload.review, "Exploitability review ready");
+        showToast("Exploitability review ready");
+      });
+    }
+
+    async function generatePrivilegeReview() {
+      if (!ensureProject()) return;
+
+      await withBusy(refs.privilegeReviewBtn, "Reviewing", async () => {
+        setOutput("Building privilege path review...", "Working");
+        const payload = await request(`/projects/${state.currentProject.id}/privilege-path-review`);
+        setOutput(payload.review, "Privilege path review ready");
+        showToast("Privilege path review ready");
+      });
+    }
+
+    function getFindingPayload(includeReportOptions) {
+      const payload = {
+        vulnerability_type: refs.vulnerabilityTypeInput.value.trim(),
+        affected_endpoint: refs.affectedEndpointInput.value.trim(),
+        severity: refs.severityInput.value,
+        test_performed: refs.testPerformedInput.value.trim(),
+        observed_result: refs.observedResultInput.value.trim(),
+        impact: refs.impactInput.value.trim()
+      };
+
+      if (includeReportOptions) {
+        payload.project_id = state.currentProject.id;
+        payload.report_style = refs.reportStyleInput.value;
+        payload.output_format = refs.outputFormatInput.value;
+      }
+
+      return payload;
+    }
+
+    function ensureProject(statusElement = refs.findingStatus) {
+      if (state.currentProject) {
+        return true;
+      }
+      showToast("Create or select a project first.", true);
+      setStatus(statusElement, "Create or select a project first.", true);
+      return false;
+    }
+
+    function updateProjectDependentState() {
+      const hasProject = Boolean(state.currentProject);
+      const projectName = state.currentProject?.name || "None selected";
+      refs.currentProjectName.textContent = projectName;
+      refs.findingContext.textContent = hasProject ? state.currentProject.target_url : "Select or create a project";
+      renderProjectDetails();
+
+      [
+        refs.deleteProjectBtn,
+        refs.openScanViewBtn,
+        refs.openFindingsViewBtn,
+        refs.refreshProjectDataBtn,
+        refs.vulnerabilityTypeInput,
+        refs.affectedEndpointInput,
+        refs.severityInput,
+        refs.reportStyleInput,
+        refs.testPerformedInput,
+        refs.observedResultInput,
+        refs.impactInput,
+        refs.outputFormatInput,
+        refs.saveFindingBtn,
+        refs.generateReportBtn,
+        refs.suggestTestsBtn,
+        refs.reloadFindingsBtn,
+        refs.exploitabilityReviewBtn,
+        refs.privilegeReviewBtn,
+        refs.finalReportBtn,
+        refs.scanProfileInput,
+        refs.scanDepthInput,
+        refs.maxPagesInput,
+        refs.includePortsInput,
+        refs.includeCommonPathsInput,
+        refs.includeReconInput,
+        refs.allowPrivateTargetsInput,
+        refs.runScanBtn,
+        refs.reloadScansBtn
+      ].forEach((element) => {
+        element.disabled = !hasProject;
+      });
+    }
+
+    async function copyOutput() {
+      if (!state.outputText) {
+        showToast("Nothing to copy yet.", true);
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(state.outputText);
+      } catch {
+        const scratch = document.createElement("textarea");
+        scratch.value = state.outputText;
+        document.body.appendChild(scratch);
+        scratch.select();
+        document.execCommand("copy");
+        scratch.remove();
+      }
+
+      showToast("Copied to clipboard");
+    }
+
+    function downloadOutput() {
+      if (!state.outputText) {
+        showToast("Nothing to download yet.", true);
+        return;
+      }
+
+      const projectName = state.currentProject?.name || "vulnpilot-report";
+      const safeName = projectName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+      const blob = new Blob([state.outputText], { type: "text/plain;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `${safeName || "vulnpilot-report"}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(link.href);
+    }
+
+    async function refreshAll() {
+      if (!state.token) return;
+      await withBusy(refs.refreshAllBtn, "Refreshing", async () => {
+        await loadProjects({ selectFirst: true });
+        showToast("Workspace refreshed");
+      });
+    }
+
+    async function refreshProjectData() {
+      if (!ensureProject(refs.projectStatus)) return;
+
+      await withBusy(refs.refreshProjectDataBtn, "Refreshing", async () => {
+        await loadFindings();
+        await loadScans();
+        showToast("Project data refreshed");
+      });
+    }
+
+    function bindEvents() {
+      refs.navTabs.forEach((tab) => {
+        tab.addEventListener("click", () => setView(tab.dataset.view));
+      });
+
+      refs.authForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        try {
+          await login();
+        } catch (error) {
+          setStatus(refs.authStatus, error.message, true);
+        }
+      });
+
+      refs.registerBtn.addEventListener("click", async () => {
+        try {
+          if (!refs.authForm.reportValidity()) return;
+          await register();
+        } catch (error) {
+          setStatus(refs.authStatus, error.message, true);
+        }
+      });
+
+      refs.forgotPasswordBtn.addEventListener("click", showResetForm);
+      refs.backToLoginBtn.addEventListener("click", () => showLoginForm());
+      refs.requestResetBtn.addEventListener("click", async () => {
+        try {
+          if (!refs.resetUsername.reportValidity()) return;
+          await requestPasswordReset();
+        } catch (error) {
+          setStatus(refs.resetStatus, error.message, true);
+        }
+      });
+
+      refs.resetForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        try {
+          if (!refs.resetForm.reportValidity()) return;
+          await resetPassword();
+        } catch (error) {
+          setStatus(refs.resetStatus, error.message, true);
+        }
+      });
+
+      refs.logoutBtn.addEventListener("click", () => logout());
+      refs.refreshAllBtn.addEventListener("click", () => runSafely(refreshAll));
+      refs.reloadProjectsBtn.addEventListener("click", () => runSafely(() => loadProjects({ selectFirst: true })));
+      refs.deleteProjectBtn.addEventListener("click", () => runSafely(deleteCurrentProject, refs.projectStatus));
+      refs.openScanViewBtn.addEventListener("click", () => setView("scans"));
+      refs.openFindingsViewBtn.addEventListener("click", () => setView("findings"));
+      refs.refreshProjectDataBtn.addEventListener("click", () => runSafely(refreshProjectData, refs.projectStatus));
+
+      refs.projectForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        await runSafely(createProject, refs.projectStatus);
+      });
+
+      refs.scanForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        await runSafely(runScan, refs.scanStatus);
+      });
+
+      refs.reloadScansBtn.addEventListener("click", () => runSafely(loadScans, refs.scanStatus));
+      refs.scanProfileInput.addEventListener("change", applyScanProfile);
+
+      refs.findingForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        await runSafely(generateReport, refs.findingStatus);
+      });
+
+      refs.saveFindingBtn.addEventListener("click", () => runSafely(saveFinding, refs.findingStatus));
+      refs.suggestTestsBtn.addEventListener("click", () => runSafely(suggestTests, refs.findingStatus));
+      refs.reloadFindingsBtn.addEventListener("click", () => runSafely(loadFindings, refs.findingStatus));
+      refs.exploitabilityReviewBtn.addEventListener("click", () => runSafely(generateExploitabilityReview, refs.findingStatus));
+      refs.privilegeReviewBtn.addEventListener("click", () => runSafely(generatePrivilegeReview, refs.findingStatus));
+      refs.finalReportBtn.addEventListener("click", () => runSafely(generateFinalReport, refs.findingStatus));
+      refs.clearFindingBtn.addEventListener("click", clearFindingForm);
+      refs.copyOutputBtn.addEventListener("click", copyOutput);
+      refs.downloadOutputBtn.addEventListener("click", downloadOutput);
+    }
+
+    async function runSafely(task, statusElement = null) {
+      try {
+        await task();
+      } catch (error) {
+        if (statusElement) {
+          setStatus(statusElement, error.message, true);
+        }
+        if (refs.outputStatus.textContent === "Working") {
+          setOutput(`Error: ${error.message}`, "Error");
+        } else {
+          refs.outputStatus.textContent = "Error";
+        }
+        showToast(error.message, true);
+      }
+    }
+
+    async function boot() {
+      bindEvents();
+      applyScanProfile();
+      clearFindingForm();
+      renderScans();
+
+      if (!state.token) {
+        showAuth();
+        return;
+      }
+
+      showApp();
+      await runSafely(() => loadProjects({ selectFirst: true }), refs.projectStatus);
+    }
+
+    boot();
+  </script>
 </body>
 </html>
