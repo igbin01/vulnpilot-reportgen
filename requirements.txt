@@ -33,7 +33,7 @@ pydantic_core==2.46.3
 Pygments==2.20.0
 python-dotenv==1.2.2
 python-jose==3.5.0
-python-multipart==0.0.26
+python-multipart==0.0.31
 PyYAML==6.0.3
 rich==15.0.0
 rich-toolkit==0.19.7
